@@ -78,8 +78,7 @@ def liveness():
 @app.get("/readyz")
 def readiness():
     """¿Está listo para recibir tráfico? Verifica la conexión a PostgreSQL."""
-    try:
-        # Usamos el context manager 'conexion' que ya tienes importado arriba
+    try:       
         with conexion() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT 1;")
@@ -91,7 +90,6 @@ def readiness():
         }
         
     except Exception as err:
-        # Si la base de datos no responde, devolvemos un código 503 (Service Unavailable)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
@@ -101,7 +99,6 @@ def readiness():
             }
         )
 #añadido
-# Luego configurar livenessProbe/readinessProbe en el Deployment de EKS.
 
 
 @app.get("/api/apuestas/eventos")
