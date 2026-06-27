@@ -13,15 +13,18 @@ Prefijo de rutas: /api/apuestas
 """
 import json
 import os
+import time #añadido para la función esperar_bd() que simula la espera a que la BD esté lista en Kubernetes.
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status #añadido status para usar códigos de estado HTTP predefinidos.
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .auth import requiere_admin, usuario_actual
 from .db import conexion, dict_cursor, esperar_bd, init_schema, sembrar_eventos
 from .simulacion import simular_partido
+
+START_TIME = time.time()
 
 SELECCIONES = {"local", "empate", "visita"}
 CUOTA_COL = {"local": "cuota_local", "empate": "cuota_empate", "visita": "cuota_visita"}
@@ -61,10 +64,41 @@ class ResolverRequest(BaseModel):
     resultado: str = Field(description="local | empate | visita")
 
 
-# TODO (alumno): implementar las rutas de salud que usará Kubernetes:
-#   - liveness: ¿el proceso está vivo? (respuesta simple).
-#   - readiness: ¿está listo para recibir tráfico? Debe verificar la BD.
-# Luego configurar livenessProbe/readinessProbe en el Deployment de EKS.
+#añadido 
+@app.get("/livez", status_code=200)
+def liveness():
+    """¿El proceso está vivo? (Respuesta simple e idéntica a Node.js)."""
+    uptime_seconds = time.time() - START_TIME
+    return {
+        "status": "alive", 
+        "uptime": uptime_seconds
+    }
+
+
+@app.get("/readyz")
+def readiness():
+    """¿Está listo para recibir tráfico? Verifica la conexión a PostgreSQL."""
+    try:       
+        with conexion() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT 1;")
+                cursor.fetchone()
+                
+        return {
+            "status": "ready", 
+            "db": "up"
+        }
+        
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "not-ready",
+                "db": "down",
+                "error": str(err)
+            }
+        )
+#añadido
 
 
 @app.get("/api/apuestas/eventos")

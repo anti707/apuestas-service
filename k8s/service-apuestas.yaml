@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apuestas-service
+  labels:
+    app: apuestas-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: apuestas-service
+  template:
+    metadata:
+      labels:
+        app: apuestas-service
+    spec:
+      containers:
+        - name: apuestas
+          image: 403943113547.dkr.ecr.us-east-1.amazonaws.com/casino-apuestas:latest
+          ports:
+            - containerPort: 8005
+          resources:
+            requests:
+              cpu: "50m"
+            limits:
+              cpu: "150m"
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 8005
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8005
+            initialDelaySeconds: 5
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apuestas-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8005
+      targetPort: 8005
+  selector:
+    app: apuestas-service
