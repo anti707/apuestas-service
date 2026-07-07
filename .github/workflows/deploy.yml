@@ -35,7 +35,7 @@ jobs:
           SHA_TAG=${{ github.sha }}
           VERSION_TAG="v1.0.0"
           
-          SERVICE_NAME="casino-apuestas"
+          SERVICE_NAME="apuestas-casino"
           DOCKER_CONTEXT="."
 
           echo "Construyendo el componente: $SERVICE_NAME"
