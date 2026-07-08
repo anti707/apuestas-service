@@ -19,7 +19,7 @@ spec:
           image: 995732577501.dkr.ecr.us-east-1.amazonaws.com/apuestas-casino:latest
           ports:
             - containerPort: 8005
-            env:
+          env:
             - name: DB_HOST
               valueFrom: { secretKeyRef: { name: casino-secrets, key: DB_HOST } }
             - name: DB_PORT
